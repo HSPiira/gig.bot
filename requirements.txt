@@ -1,0 +1,4 @@
+requests
+beautifulsoup4
+sqlite-utils
+fake-useragent
