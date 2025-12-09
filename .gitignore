@@ -1,0 +1,19 @@
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database file
+gigs.db
+
+# Proxies file
+proxies.txt
+
+# Session file for Telegram
+gig_bot_session.session

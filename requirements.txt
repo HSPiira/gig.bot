@@ -2,3 +2,7 @@ requests
 beautifulsoup4
 sqlite-utils
 fake-useragent
+discord.py
+telethon
+transformers
+torch
