@@ -98,7 +98,17 @@ async def send_telegram_notification(source, title, link, snippet):
 
 async def send_notification(source, title, link, snippet):
     """
-    Sends notifications based on enabled settings in config.
+    Dispatches gig notifications to enabled channels (email, Telegram) based on configuration.
+    
+    Checks `config.notification_settings` to determine which notification methods are enabled (email, Telegram) and
+    schedules corresponding asynchronous send functions (`send_email_notification`, `send_telegram_notification`)
+    to run concurrently.
+    
+    Parameters:
+        source (str): The source of the gig.
+        title (str): The title of the gig.
+        link (str): The link to the gig.
+        snippet (str): A short snippet of the gig description.
     """
     email_task = None
     telegram_task = None
