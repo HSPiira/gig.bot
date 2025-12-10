@@ -1,18 +1,16 @@
 import discord
 import os
+import asyncio
+import time # Import time for measuring duration
 from core.filters import looks_like_gig
-from core.storage import save_gig
+from core.storage import save_gig, update_scraper_health, log_scraper_performance # Import log_scraper_performance
+from core.logger import logger
+from core.throttler import async_randomized_delay
+from datetime import datetime # Import datetime
 
 # --- Configuration ---
-# IMPORTANT: You need to replace these with your own values.
-# 1. Get your Discord Bot Token from the Discord Developer Portal.
-# 2. Get the IDs of the channels you want to monitor.
-#    - Enable Developer Mode in Discord (Settings > Advanced).
-#    - Right-click the channel and select "Copy Channel ID".
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
-CHANNEL_IDS = [123456789012345678]  # Replace with your channel IDs
-
-# --- Discord Bot Implementation ---
+CHANNEL_IDS = [123456789012345678]
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -22,57 +20,77 @@ client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
-    print(f'Logged in as {client.user}')
-    print('Monitoring channels:')
+    logger.info(f'Logged in as {client.user}')
+    logger.info('Monitoring channels:')
     for channel_id in CHANNEL_IDS:
         channel = client.get_channel(channel_id)
         if channel:
-            print(f'- {channel.name} in {channel.guild.name}')
+            logger.info(f'- {channel.name} in {channel.guild.name}')
         else:
-            print(f'- Unknown channel: {channel_id}')
+            logger.warning(f'- Unknown channel: {channel_id}')
+    update_scraper_health("discord") # Update health after bot is ready
 
 @client.event
 async def on_message(message):
-    # Ignore messages from the bot itself
     if message.author == client.user:
         return
 
-    # Only process messages from the specified channels
     if message.channel.id in CHANNEL_IDS:
-        content = message.content
-        if looks_like_gig(content):
-            print(f"Potential gig found in '{message.channel.name}': {message.jump_url}")
-            # Create a unique link to the message
+        full_description = message.content
+        if looks_like_gig(full_description):
+            channel_name = message.channel.name if message.channel else "Unknown Channel"
             link = message.jump_url
-            save_gig("Discord", content[:100], link, content)
+            timestamp = message.created_at.isoformat() if message.created_at else None
+            category = channel_name
+
+            logger.info(f"Potential gig found in '{channel_name}': {link}")
+            await async_randomized_delay()
+            await save_gig( # Await save_gig
+                source="Discord",
+                title=full_description[:100], # Use first 100 chars of description as title
+                link=link,
+                snippet=full_description[:200],
+                full_description=full_description,
+                timestamp=timestamp,
+                category=category
+            )
 
 async def scrape_discord():
-    """
-    Starts the Discord bot to monitor for gigs.
-    """
+    scraper_name = "discord"
+    start_time = time.time()
+    status = "success"
+    error_message = None
+
     if DISCORD_BOT_TOKEN == "YOUR_BOT_TOKEN_HERE" or not DISCORD_BOT_TOKEN:
-        print("🛑 Please set your DISCORD_BOT_TOKEN in scrapers/discord.py or as an environment variable.")
+        logger.error("🛑 Please set your DISCORD_BOT_TOKEN in scrapers/discord.py or as an environment variable.")
+        status = "failed"
+        error_message = "Discord bot token not set."
+        # Log performance for this "failed" attempt to start
+        log_scraper_performance(scraper_name, time.time() - start_time, status, error_message)
         return
 
-    print("Starting Discord bot...")
+    logger.info("Starting Discord bot...")
     try:
         await client.start(DISCORD_BOT_TOKEN)
         await client.wait_until_ready()
-        # Keep the bot running in the background
-        await asyncio.Future()
-    except discord.LoginFailure:
-        print("🛑 Discord login failed. Please check your bot token.")
+        await asyncio.Future() # Keep the bot running in the background
+    except discord.LoginFailure as e:
+        logger.error("🛑 Discord login failed. Please check your bot token.")
+        status = "failed"
+        error_message = str(e)
     except Exception as e:
-        print(f"🛑 An error occurred with the Discord bot: {e}")
+        logger.error(f"🛑 An error occurred with the Discord bot: {e}")
+        status = "failed"
+        error_message = str(e)
     finally:
         if not client.is_closed():
             await client.close()
+        # Log performance at the end of the scrape_discord function's lifecycle
+        log_scraper_performance(scraper_name, time.time() - start_time, status, error_message)
+
 
 if __name__ == '__main__':
-    import asyncio
-    # This allows running the scraper directly for testing
-    # You would need to set the environment variable DISCORD_BOT_TOKEN
     try:
         asyncio.run(scrape_discord())
     except KeyboardInterrupt:
-        print("Shutting down Discord bot...")
+        logger.info("Shutting down Discord bot...")

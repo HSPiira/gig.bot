@@ -6,3 +6,7 @@ discord.py
 telethon
 transformers
 torch
+tenacity
+robotexclusionrulesparser
+APScheduler
+python-telegram-bot
