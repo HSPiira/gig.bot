@@ -15,18 +15,20 @@ from core.config import config # Import config
 )
 def fetch_url_with_retries(method, url, **kwargs):
     """
-    Fetches a URL with retry logic for timeouts and specific HTTP status codes.
-
-    Args:
-        method: The HTTP method to use (e.g., requests.get, requests.post).
-        url: The URL to fetch.
-        **kwargs: Additional arguments to pass to the requests method.
-
+    Fetches a URL using the provided requests method and applies the module's retryable error handling.
+    
+    Defaults the request timeout from config.http_timeout when not supplied in kwargs. Retries for network timeouts, connection errors, and specific HTTP status codes are handled by the surrounding retry configuration; this function raises request-related exceptions to allow that behavior.
+    
+    Parameters:
+        method (callable): A requests method function (e.g., requests.get, requests.post).
+        url (str): The URL to request.
+        **kwargs: Additional keyword arguments forwarded to the requests method; `timeout` defaults to config.http_timeout if omitted.
+    
     Returns:
-        requests.Response: The response object if successful.
-
+        requests.Response: The HTTP response when the request completes successfully.
+    
     Raises:
-        requests.exceptions.RequestException: If the request fails after all retries.
+        requests.exceptions.RequestException: If the request fails (re-raised to surface network or HTTP errors).
     """
     # Set default timeout from config if not provided in kwargs
     kwargs.setdefault('timeout', config.http_timeout)

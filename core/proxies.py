@@ -4,7 +4,10 @@ from core.logger import logger
 
 def get_proxy():
     """
-    Returns a random proxy from the configured list if proxies are enabled.
+    Selects a proxy from configuration when proxying is enabled.
+    
+    Returns:
+        dict: Mapping with `"http"` and `"https"` set to the chosen proxy string, or `None` if proxies are disabled or no proxy list is available.
     """
     if not config.use_proxies:
         logger.info("Proxies are disabled in config. Not using any proxy.")
@@ -24,7 +27,12 @@ def get_proxy():
 
 def get_random_user_agent():
     """
-    Returns a random user agent from the configured list.
+    Selects a user agent string at random from the configured list.
+    
+    If the configuration provides no user agents, returns a sensible default user agent string.
+    
+    Returns:
+        str: A user agent string chosen from configuration, or a default string if none are configured.
     """
     user_agents = config.get("user_agents", [])
     if not user_agents:

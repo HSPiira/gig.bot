@@ -14,6 +14,11 @@ from core.config import config
 BASE_URL = "https://jiji.ug/search?query=website"
 
 async def scrape_jiji():
+    """
+    Scrapes Jiji Uganda for gig listings and saves detected gigs, optionally fetching and storing detailed gig pages.
+    
+    Performs a search on the Jiji site, filters listings that look like gigs, and persists each matching gig via save_gig. The function respects robots.txt for both the search page and individual gig pages, applies randomized asynchronous delays to throttle requests, and optionally routes requests through a proxy when enabled in configuration. After a successful run it updates scraper health and always logs run performance (duration, status, and error message if any).
+    """
     scraper_name = "jiji"
     start_time = time.time()
     status = "success"

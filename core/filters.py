@@ -9,6 +9,12 @@ classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnl
 candidate_labels = ["freelance gig", "job offer", "advertisement", "discussion"]
 
 def keyword_score_and_filter(text: str) -> (float, bool):
+    """
+    Determine a weighted keyword score for the text and whether it should be considered a potential gig.
+    
+    Returns:
+        (float, bool): A tuple where the first element is the accumulated weighted score from configured keywords, and the second element is `True` if no negative keyword was found and the score is greater than zero, `False` otherwise.
+    """
     text_lower = text.lower()
     for neg_keyword in config.negative_keywords:
         if neg_keyword.lower() in text_lower:
@@ -26,6 +32,17 @@ def keyword_score_and_filter(text: str) -> (float, bool):
     return (0.0, False)
 
 def extract_budget_info(text: str) -> dict:
+    """
+    Extracts budget amounts and currency information from freeform text.
+    
+    Parses currency symbols/codes and numeric amounts (supports commas, decimals, trailing 'k' for thousands and 'm' for millions), detecting either a range or a single fixed price.
+    
+    Returns:
+        dict: Parsed budget information. Possible shapes:
+            - Range: {"type": "range", "amount_min": float, "amount_max": float, "currency": str or None}
+            - Fixed price: {"type": "fixed_price", "amount": float, "currency": str or None}
+            - Empty dict if no amount or range is detected.
+    """
     budget_info = {}
     text_lower = text.lower()
 
@@ -53,6 +70,16 @@ def extract_budget_info(text: str) -> dict:
 
     # Helper to parse amount strings
     def parse_amount(amount_str):
+        """
+        Parse a numeric amount string into a float, handling commas, decimals, and 'k'/'m' multipliers.
+        
+        Parameters:
+            amount_str (str): String containing the amount; may include commas, a decimal point, and an optional trailing
+                'k' (thousand) or 'm' (million) multiplier (case-insensitive).
+        
+        Returns:
+            float: The parsed numeric value with multipliers applied. Returns 0.0 if parsing fails.
+        """
         amount_str = amount_str.replace(',', '')
         
         multiplier = 1.0
@@ -129,6 +156,21 @@ def extract_budget_info(text: str) -> dict:
 
 
 def looks_like_gig(text: str) -> bool:
+    """
+    Determine whether a piece of text resembles a freelance gig or job offer.
+    
+    Parameters:
+        text (str): The text of a posting or message to evaluate.
+    
+    Returns:
+        bool: `true` if the text is considered a gig or job offer, `false` otherwise.
+    
+    Notes:
+        - Empty or missing text is treated as not a gig.
+        - The function first applies a keyword-based filter; texts filtered out there are not considered gigs.
+        - For remaining texts, a zero-shot classifier is used; a top label of "freelance gig" or "job offer" with a score above 0.4 is required to classify as a gig.
+        - If the classifier raises an exception, the function falls back to the keyword score and returns `true` only if that score is greater than zero.
+    """
     if not text:
         return False
 

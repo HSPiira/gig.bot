@@ -20,7 +20,14 @@ client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
 
 @client.on(events.NewMessage(chats=CHANNEL_USERNAMES))
 async def handle_new_message(event):
-    """Handles new messages from the specified channels."""
+    """
+    Process incoming Telegram message events and persist messages that resemble a gig.
+    
+    When the incoming event's message text looks like a gig, this handler derives channel metadata (channel name/title, message link, timestamp, category), applies a randomized delay, and saves a gig record via save_gig.
+    
+    Parameters:
+        event (telethon.events.newmessage.NewMessage.Event): Incoming Telethon NewMessage event containing the message to inspect.
+    """
     message = event.message
     full_description = message.text
     
@@ -44,6 +51,11 @@ async def handle_new_message(event):
         )
 
 async def scrape_telegram():
+    """
+    Start and run the Telegram client to monitor channels for new messages and record scraper health and performance.
+    
+    Validates API credentials and aborts early if placeholders are detected. When running, starts the Telethon client (may prompt for a phone number), updates scraper health to indicate a healthy connection, and runs until the client disconnects. On errors or at shutdown, records scraper performance and error state; if connected, the client is disconnected before returning.
+    """
     scraper_name = "telegram"
     start_time = time.time()
     status = "success"

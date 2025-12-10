@@ -7,7 +7,9 @@ from core.config import config # Import config
 
 def randomized_delay():
     """
-    Introduces a randomized delay between requests, using delay_range from config.
+    Introduce a synchronous randomized delay between requests.
+    
+    Selects a duration uniformly from config.delay_range (min_seconds, max_seconds), logs the chosen delay, and blocks execution for that duration.
     """
     min_seconds, max_seconds = config.delay_range
     delay = random.uniform(min_seconds, max_seconds)
@@ -16,7 +18,9 @@ def randomized_delay():
 
 async def async_randomized_delay():
     """
-    Introduces an asynchronous randomized delay between requests, using delay_range from config.
+    Pause asynchronously for a random duration selected from config.delay_range.
+    
+    Chooses a floating-point duration between the configured minimum and maximum seconds and suspends the coroutine for that duration to provide per-request throttling.
     """
     min_seconds, max_seconds = config.delay_range
     delay = random.uniform(min_seconds, max_seconds)
