@@ -61,6 +61,7 @@ class TestStorage(unittest.IsolatedAsyncioTestCase):
             snippet="Test Snippet",
             price="$100",
             full_description="Full description text",
+            timestamp=None, # Changed from explicit value to None
             contact_info="test@example.com",
             category="Development"
         )
@@ -101,13 +102,23 @@ class TestStorage(unittest.IsolatedAsyncioTestCase):
             source="Test Source",
             title="Test Title",
             link="http://test.com/duplicate",
-            snippet="Test Snippet"
+            snippet="Test Snippet",
+            price=None, # Added
+            full_description=None, # Added
+            timestamp=None, # Added
+            contact_info=None, # Added
+            category=None # Added
         )
         await save_gig(
             source="Test Source",
             title="Test Title Duplicate",
             link="http://test.com/duplicate",
-            snippet="Test Snippet Duplicate"
+            snippet="Test Snippet Duplicate",
+            price=None, # Added
+            full_description=None, # Added
+            timestamp=None, # Added
+            contact_info=None, # Added
+            category=None # Added
         ) # Attempt to save duplicate
 
         conn = sqlite3.connect(DB_NAME)
@@ -128,7 +139,11 @@ class TestStorage(unittest.IsolatedAsyncioTestCase):
             title="Timestamp Gig",
             link="http://test.com/timestamp",
             snippet="Snippet",
-            timestamp=custom_timestamp
+            price=None, # Added
+            full_description=None, # Added
+            timestamp=custom_timestamp,
+            contact_info=None, # Added
+            category=None # Added
         )
 
         conn = sqlite3.connect(DB_NAME)
@@ -147,13 +162,23 @@ class TestStorage(unittest.IsolatedAsyncioTestCase):
             source="Source A",
             title="Title A",
             link="http://test.com/shared_link",
-            snippet="Snippet A"
+            snippet="Snippet A",
+            price=None, # Added
+            full_description=None, # Added
+            timestamp=None, # Added
+            contact_info=None, # Added
+            category=None # Added
         )
         await save_gig(
             source="Source B",
             title="Title B",
             link="http://test.com/shared_link",
-            snippet="Snippet B"
+            snippet="Snippet B",
+            price=None, # Added
+            full_description=None, # Added
+            timestamp=None, # Added
+            contact_info=None, # Added
+            category=None # Added
         )
 
         conn = sqlite3.connect(DB_NAME)

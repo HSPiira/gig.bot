@@ -44,5 +44,13 @@ Planned features:
 
 ---
 
+## Configuration
+
+⚠️ **IMPORTANT:** Copy `settings.json.example` to `settings.json` and configure your settings.
+Sensitive credentials should be managed via environment variables (see `.env.example`).
+
+---
+
 ## Project Structure
+
 

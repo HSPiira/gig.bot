@@ -48,11 +48,13 @@ async def send_email_notification(source, title, link, snippet):
 
     context = ssl.create_default_context()
     try:
-        with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context) as server: # Use SMTP_SSL for implicit TLS
-            server.login(smtp_user, smtp_password)
-            server.sendmail(smtp_user, recipient_emails, message.as_string())
+        def _send_email():
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context) as server:
+                server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, recipient_emails, message.as_string())
+        await asyncio.to_thread(_send_email)
         logger.info("✅ Notification email sent!")
-    except Exception as e:
+    except (smtplib.SMTPException, OSError) as e:
         logger.error(f"🛑 Error sending notification email: {e}")
 
 async def send_telegram_notification(source, title, link, snippet):

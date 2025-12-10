@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+import unittest.mock # Import unittest.mock
 from core.filters import keyword_score_and_filter, extract_budget_info, looks_like_gig
 from core.config import config # To access test keywords
 
@@ -7,11 +7,11 @@ class TestFilters(unittest.TestCase):
 
     def setUp(self):
         # Set up some test config values for keywords
-        config.settings["weighted_keywords"] = {
+        config._data["weighted_keywords"] = {
             "freelance": 5, "project": 3, "hiring": 2, "developer": 3,
             "urgent": 1, "budget": 2, "pay": 2
         }
-        config.settings["negative_keywords"] = [
+        config._data["negative_keywords"] = [
             "recruitment agency", "full-time", "permanent position", "internship"
         ]
 
@@ -86,31 +86,37 @@ class TestFilters(unittest.TestCase):
         info = extract_budget_info("Just a plain text message.")
         self.assertEqual(info, {})
 
-    @patch('core.filters.classifier')
-    def test_looks_like_gig_nlp_positive(self, mock_classifier_pipeline):
-        mock_classifier_pipeline.return_value = {"labels": ["freelance gig", "discussion"], "scores": [0.8, 0.2]}
+    @unittest.mock.patch('core.filters.pipeline') # Patch the pipeline function
+    def test_looks_like_gig_nlp_positive(self, mock_pipeline):
+        # Configure the mock pipeline to return a mock classifier
+        mock_classifier_instance = unittest.mock.MagicMock(return_value={"labels": ["freelance gig", "discussion"], "scores": [0.8, 0.2]})
+        mock_pipeline.return_value = mock_classifier_instance
+        
         # This text should pass keyword filter and then NLP
         text = "Looking for a freelance graphic designer."
         self.assertTrue(looks_like_gig(text))
         # Ensure classifier was called with the correct arguments
-        mock_classifier_pipeline.assert_called_with(unittest.mock.ANY, ["freelance gig", "job offer", "advertisement", "discussion"])
+        mock_classifier_instance.assert_called_with(unittest.mock.ANY, ["freelance gig", "job offer", "advertisement", "discussion"])
 
-    @patch('core.filters.classifier')
-    def test_looks_like_gig_nlp_negative(self, mock_classifier_pipeline):
-        mock_classifier_pipeline.return_value = {"labels": ["discussion", "freelance gig"], "scores": [0.8, 0.2]}
+    @unittest.mock.patch('core.filters.pipeline') # Patch the pipeline function
+    def test_looks_like_gig_nlp_negative(self, mock_pipeline):
+        # Configure the mock pipeline to return a mock classifier
+        mock_classifier_instance = unittest.mock.MagicMock(return_value={"labels": ["discussion", "freelance gig"], "scores": [0.8, 0.2]})
+        mock_pipeline.return_value = mock_classifier_instance
+        
         # This text should pass keyword filter but fail NLP
         text = "Discussion about new project management tools."
         self.assertFalse(looks_like_gig(text))
-        mock_classifier_pipeline.assert_called_with(unittest.mock.ANY, ["freelance gig", "job offer", "advertisement", "discussion"])
+        mock_classifier_instance.assert_called_with(unittest.mock.ANY, ["freelance gig", "job offer", "advertisement", "discussion"])
 
-    @patch('core.filters.classifier')
-    def test_looks_like_gig_keyword_negative_override_nlp(self, mock_classifier_pipeline):
+    @unittest.mock.patch('core.filters.pipeline') # Patch the pipeline function
+    def test_looks_like_gig_keyword_negative_override_nlp(self, mock_pipeline):
         # This text should fail keyword filter due to negative keyword,
         # so NLP should not even be called effectively
         text = "Hiring a full-time developer for a project."
         self.assertFalse(looks_like_gig(text))
         # Assert that the NLP classifier was NOT called
-        mock_classifier_pipeline.assert_not_called()
+        mock_pipeline.assert_not_called()
 
 if __name__ == '__main__':
     unittest.main()

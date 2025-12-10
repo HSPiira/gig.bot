@@ -10,3 +10,6 @@ tenacity
 robotexclusionrulesparser
 APScheduler
 python-telegram-bot
+python-dotenv
+pydantic
+aiosqlite

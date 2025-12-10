@@ -1,12 +1,34 @@
 import re
+import hashlib
+from functools import lru_cache
 from transformers import pipeline
 from core.logger import logger
 from core.config import config
 
-# Initialize the zero-shot classification pipeline
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+# Lazy-load classifier to improve startup time
+_classifier = None
+
+def get_classifier():
+    """
+    Get or initialize the NLP classifier (lazy loading).
+
+    Returns:
+        The zero-shot classification pipeline.
+    """
+    global _classifier
+    if _classifier is None:
+        logger.info("Loading NLP classification model (this may take a moment)...")
+        _classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+        logger.info("NLP model loaded successfully")
+    return _classifier
 
 candidate_labels = ["freelance gig", "job offer", "advertisement", "discussion"]
+
+# Configure NLP settings from config
+NLP_MAX_WORDS = config.get('nlp_settings', {}).get('max_words', 300)
+NLP_CONFIDENCE_THRESHOLD = config.get('nlp_settings', {}).get('confidence_threshold', 0.4)
+NLP_ENABLE_CACHING = config.get('nlp_settings', {}).get('enable_caching', True)
+NLP_CACHE_SIZE = config.get('nlp_settings', {}).get('cache_size', 1000)
 
 def keyword_score_and_filter(text: str) -> (float, bool):
     """
@@ -155,21 +177,39 @@ def extract_budget_info(text: str) -> dict:
     return {}
 
 
+@lru_cache(maxsize=NLP_CACHE_SIZE if NLP_ENABLE_CACHING else 0)
+def _classify_text_cached(text_hash: str, truncated_text: str) -> tuple:
+    """
+    Cached NLP classification function.
+
+    Args:
+        text_hash: MD5 hash of the text (for cache key)
+        truncated_text: The truncated text to classify
+
+    Returns:
+        Tuple of (top_label, top_score)
+    """
+    classifier = get_classifier()
+    result = classifier(truncated_text, candidate_labels)
+    return result["labels"][0], result["scores"][0]
+
+
 def looks_like_gig(text: str) -> bool:
     """
     Determine whether a piece of text resembles a freelance gig or job offer.
-    
+
     Parameters:
         text (str): The text of a posting or message to evaluate.
-    
+
     Returns:
         bool: `true` if the text is considered a gig or job offer, `false` otherwise.
-    
+
     Notes:
         - Empty or missing text is treated as not a gig.
         - The function first applies a keyword-based filter; texts filtered out there are not considered gigs.
-        - For remaining texts, a zero-shot classifier is used; a top label of "freelance gig" or "job offer" with a score above 0.4 is required to classify as a gig.
-        - If the classifier raises an exception, the function falls back to the keyword score and returns `true` only if that score is greater than zero.
+        - For remaining texts, a zero-shot classifier is used with caching enabled for performance.
+        - Configurable confidence threshold and text truncation via config.nlp_settings.
+        - If the classifier raises an exception, the function falls back to the keyword score.
     """
     if not text:
         return False
@@ -179,15 +219,22 @@ def looks_like_gig(text: str) -> bool:
         logger.info("Skipping based on keyword filter.")
         return False
 
-    truncated_text = " ".join(text.split()[:300])
+    # Truncate text to configured max words
+    truncated_text = " ".join(text.split()[:NLP_MAX_WORDS])
 
     try:
-        result = classifier(truncated_text, candidate_labels)
-        
-        top_label = result["labels"][0]
-        top_score = result["scores"][0]
+        if NLP_ENABLE_CACHING:
+            # Use caching for improved performance
+            text_hash = hashlib.md5(truncated_text.encode()).hexdigest()
+            top_label, top_score = _classify_text_cached(text_hash, truncated_text)
+        else:
+            # Direct classification without caching
+            classifier = get_classifier()
+            result = classifier(truncated_text, candidate_labels)
+            top_label = result["labels"][0]
+            top_score = result["scores"][0]
 
-        if top_label in ["freelance gig", "job offer"] and top_score > 0.4:
+        if top_label in ["freelance gig", "job offer"] and top_score > NLP_CONFIDENCE_THRESHOLD:
             logger.info(f"✅ Classified as '{top_label}' (Score: {top_score:.2f})")
             return True
         else:

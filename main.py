@@ -11,7 +11,7 @@ from datetime import datetime, timezone # Added import for datetime and timezone
 import scrapers
 from core.storage import init_db, check_scraper_health # Import check_scraper_health
 from core.logger import logger
-from core.config import config
+from core.config import config, ConfigValidationError # Import config and ConfigValidationError
 from core.exporter import fetch_all_gigs, export_to_csv, export_to_json # Import exporter functions
 
 async def export_gigs_job():
@@ -134,4 +134,9 @@ async def main():
         logger.info("Scheduler shut down.")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except ConfigValidationError as e:
+        logger.critical(f"Configuration error: {e}")
+        import sys
+        sys.exit(1)

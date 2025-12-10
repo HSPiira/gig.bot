@@ -3,21 +3,79 @@
 .vscode/
 *.swp
 *.swo
+*~
 
-# Python cache
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 *.pyc
 *.pyo
+*.pyd
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Database file
+# Virtual Environment
+venv/
+ENV/
+env/
+
+# Database files
 gigs.db
+*.db-journal
+*.sqlite
+*.sqlite3
 
 # Proxies file
 proxies.txt
 
-# Session file for Telegram
-gig_bot_session.session
+# Session files (Telegram)
+*.session
 
-TODO
+# Sensitive Configuration
+settings.json
+.env
+.env.*
+
+# Logs
 logs/
 *.log
+
+# Exports
+exports/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation
+PROJECT_REVIEW.md
+todo
+IMPROVEMENTS_SUMMARY.md

@@ -54,6 +54,13 @@ def init_db():
     )
     """)
 
+    # Create indexes for better query performance
+    c.execute("CREATE INDEX IF NOT EXISTS idx_gigs_source ON gigs(source)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_gigs_timestamp ON gigs(timestamp)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_gigs_category ON gigs(category)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_scraper_health_last_run ON scraper_health(last_run)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_scraper_performance_status ON scraper_performance(status)")
+
     conn.commit()
     conn.close()
 
