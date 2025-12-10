@@ -156,32 +156,23 @@ async def check_scraper_health(threshold_minutes: int):
             logger.warning(alert_message)
             await send_notification("Health Check", alert_message, "", alert_message) # Send alert notification
 
-
-async def save_gig( # Made save_gig async
+def _sync_save_gig_db_ops(
     source: str, 
     title: str, 
     link: str, 
     snippet: str,
-    price: str = None,
-    full_description: str = None,
-    timestamp: str = None,
-    contact_info: str = None,
-    category: str = None
-):
+    price: str | None,
+    full_description: str | None,
+    timestamp: str | None,
+    contact_info: str | None,
+    category: str | None
+) -> bool:
     """
-    Persist a gig to the database and notify recipients about the new gig.
-    
-    If `timestamp` is not provided, the current UTC time in ISO 8601 format is used. If a gig with the same `source` and `link` already exists (unique constraint), the insert is skipped and a warning is logged. A notification is sent after a successful save.
-    
-    Parameters:
-        timestamp (str | None): ISO 8601 UTC timestamp for the gig; when None, current UTC time is used.
+    Synchronous helper function to perform SQLite database operations for saving a gig.
+    This function is intended to be run in a separate thread via run_in_executor.
     """
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-
-    # If timestamp is not provided, use current UTC time
-    if timestamp is None:
-        timestamp = datetime.now(timezone.utc).isoformat()
 
     try:
         c.execute("""
@@ -191,12 +182,46 @@ async def save_gig( # Made save_gig async
 
         conn.commit()
         logger.info(f"✅ Saved gig: {title}")
-        
-        # Send a notification for the new gig
-        await send_notification(source, title, link, snippet) # Await notification
-
+        return True # Indicate success
     except sqlite3.IntegrityError:
-        # This will happen if the link is not unique
         logger.warning(f"⏩ Skipping duplicate gig: {title}")
+        return False # Indicate duplicate
+    except Exception as e:
+        logger.error(f"Error saving gig to DB: {e}")
+        return False # Indicate failure
     finally:
         conn.close()
+
+async def save_gig(
+    source: str, 
+    title: str, 
+    link: str, 
+    snippet: str,
+    price: str | None,
+    full_description: str | None,
+    timestamp: str | None,
+    contact_info: str | None,
+    category: str | None
+):
+    """
+    Persist a gig to the database and notify recipients about the new gig.
+    
+    If `timestamp` is not provided, the current UTC time in ISO 8601 format is used. If a gig with the same `source` and `link` already exists (unique constraint), the insert is skipped and a warning is logged. A notification is sent after a successful save.
+    
+    Parameters:
+        timestamp (str | None): ISO 8601 UTC timestamp for the gig; when None, current UTC time is used.
+    """
+    # If timestamp is not provided, use current UTC time
+    if timestamp is None:
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+    # Run synchronous DB operations in a separate thread
+    db_success = await asyncio.get_running_loop().run_in_executor(
+        None, # Use default ThreadPoolExecutor
+        _sync_save_gig_db_ops,
+        source, title, link, snippet, price, full_description, timestamp, contact_info, category
+    )
+
+    if db_success:
+        # Send a notification for the new gig only if successfully saved
+        await send_notification(source, title, link, snippet)

@@ -4,11 +4,11 @@ from core.filters import looks_like_gig
 from core.storage import save_gig, update_scraper_health, log_scraper_performance # Import log_scraper_performance
 from core.proxies import get_proxy, get_random_user_agent
 from core.logger import logger
-from core.throttler import randomized_delay
+from core.throttler import async_randomized_delay
 from core.http_utils import fetch_url_with_retries
 from core.robots import is_url_allowed
 from core.config import config
-from datetime import datetime
+from datetime import datetime, timezone
 
 # A list of subreddits to scrape
 SUBREDDITS = [
@@ -39,6 +39,7 @@ async def scrape_reddit():
         proxy = get_proxy()
 
     for subreddit in SUBREDDITS: # Loop through subreddits, each is a mini-scrape
+        start_time = time.time() # Reset start time for each subreddit
         try:
             logger.info(f"Scraping {scraper_name} (r/{subreddit})...")
             url = BASE_URL.format(subreddit=subreddit)
@@ -47,8 +48,8 @@ async def scrape_reddit():
                 logger.warning(f"Scraping of {url} disallowed by robots.txt. Skipping r/{subreddit}.")
                 continue
 
-            randomized_delay() # Add delay before request
-            response = fetch_url_with_retries(requests.get, url, headers=headers, proxies=proxy if config.use_proxies else None)
+            await async_randomized_delay()
+            response = await fetch_url_with_retries(requests.get, url, headers=headers, proxies=proxy if config.use_proxies else None)
 
             data = response.json()
             posts = data.get("data", {}).get("children", [])
@@ -65,7 +66,7 @@ async def scrape_reddit():
                 
                 # Convert Unix timestamp to ISO format
                 created_utc = post_data.get("created_utc")
-                timestamp = datetime.fromtimestamp(created_utc).isoformat() if created_utc else None
+                timestamp = datetime.fromtimestamp(created_utc, timezone.utc).isoformat() if created_utc else None
                 
                 category = post_data.get("subreddit")
 
@@ -97,4 +98,3 @@ async def scrape_reddit():
         finally:
             duration = time.time() - start_time # Duration for THIS subreddit's scrape
             log_scraper_performance(f"{scraper_name}.{subreddit}", duration, status, error_message)
-            start_time = time.time() # Reset start time for next subreddit

@@ -6,6 +6,7 @@ import threading
 import os
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from datetime import datetime, timezone # Added import for datetime and timezone
 
 import scrapers
 from core.storage import init_db, check_scraper_health # Import check_scraper_health
@@ -36,9 +37,9 @@ async def export_gigs_job():
     export_formats = config.export_settings.get("export_formats", [])
     for fmt in export_formats:
         if fmt == "csv":
-            export_to_csv(gigs, filename=os.path.join(export_dir, f"gigs_export_{asyncio.get_event_loop().time():.0f}.csv"))
+            export_to_csv(gigs, filename=os.path.join(export_dir, f"gigs_export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"))
         elif fmt == "json":
-            export_to_json(gigs, filename=os.path.join(export_dir, f"gigs_export_{asyncio.get_event_loop().time():.0f}.json"))
+            export_to_json(gigs, filename=os.path.join(export_dir, f"gigs_export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"))
         else:
             logger.warning(f"Unsupported export format: {fmt}")
     logger.info("Gig export job finished.")
@@ -116,8 +117,9 @@ async def main():
     health_check_interval = config.get("health_check_interval_minutes", 30)
     logger.info(f"-> Scheduling health check job to run every {health_check_interval} minutes.")
     scheduler.add_job(
-        lambda: check_scraper_health(health_check_interval), # Pass interval as argument
+        check_scraper_health, # Pass the coroutine function directly
         IntervalTrigger(minutes=health_check_interval),
+        args=[health_check_interval], # Pass arguments using args
         id="health_check_job"
     )
 

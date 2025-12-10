@@ -33,7 +33,7 @@ async def handle_new_message(event):
     
     if looks_like_gig(full_description):
         channel = await event.get_chat()
-        channel_name = getattr(channel, 'username', 'Unknown') or getattr(channel, 'title', 'Unknown')
+        channel_name = getattr(channel, 'username', None) or getattr(channel, 'title', None) or 'Unknown'
         link = f"https://t.me/{channel_name}/{message.id}"
         timestamp = message.date.isoformat() if message.date else None
         category = channel_name
@@ -76,7 +76,7 @@ async def scrape_telegram():
         update_scraper_health("telegram") # Update health after client is running
         await client.run_until_disconnected()
     except Exception as e:
-        logger.error(f"🛑 An error occurred with the Telegram client: {e}")
+        logger.exception(f"🛑 An error occurred with the Telegram client: {e}")
         status = "failed"
         error_message = str(e)
     finally:
