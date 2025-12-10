@@ -6,7 +6,12 @@ from core.logger import logger
 from core.storage import DB_NAME # Assuming DB_NAME is accessible from storage
 
 def fetch_all_gigs():
-    """Fetches all gigs from the database."""
+    """
+    Retrieve all records from the `gigs` table as a list of dictionaries.
+    
+    Returns:
+        list[dict]: A list where each item is a dictionary mapping column names to their values for a gig. Returns an empty list if the table has no rows.
+    """
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row # This allows access to columns by name
     c = conn.cursor()
@@ -16,7 +21,15 @@ def fetch_all_gigs():
     return [dict(gig) for gig in gigs] # Convert rows to dictionaries
 
 def export_to_csv(gigs, filename=None):
-    """Exports a list of gig dictionaries to a CSV file."""
+    """
+    Write a sequence of gig dictionaries to a CSV file.
+    
+    If `gigs` is empty the function logs an informational message and returns without creating a file. When `filename` is None a timestamped filename in the form `gigs_export_YYYYMMDD_HHMMSS.csv` is generated. Column headers are taken from the keys of the first gig. The file is written with UTF-8 encoding; IO errors during writing are caught and logged.
+    
+    Parameters:
+        gigs (list[dict]): List of gig records where each item is a dictionary of column name to value.
+        filename (str | None): Path to the output CSV file; if None a timestamped filename is created.
+    """
     if not gigs:
         logger.info("No gigs to export to CSV.")
         return
@@ -37,7 +50,16 @@ def export_to_csv(gigs, filename=None):
         logger.error(f"Error writing CSV file {filename}: {e}")
 
 def export_to_json(gigs, filename=None):
-    """Exports a list of gig dictionaries to a JSON file."""
+    """
+    Write a list of gig dictionaries to a JSON file.
+    
+    If `filename` is None a timestamped file named `gigs_export_YYYYMMDD_HHMMSS.json` is created.
+    If `gigs` is empty the function logs an informational message and returns without creating a file.
+    
+    Parameters:
+        gigs (list[dict]): List of gig records to serialize to JSON.
+        filename (str | None): Optional output file path; when omitted a timestamped filename is used.
+    """
     if not gigs:
         logger.info("No gigs to export to JSON.")
         return

@@ -10,12 +10,22 @@ class TestStorage(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         # Ensure a clean database for each test
+        """
+        Prepare a clean SQLite database before each test.
+        
+        Removes any existing database file at DB_NAME and initializes a fresh database schema for the test.
+        """
         if os.path.exists(DB_NAME):
             os.remove(DB_NAME)
         init_db()
 
     async def asyncTearDown(self):
         # Clean up the database file after each test
+        """
+        Remove the test database file if it exists.
+        
+        Executed after each test to delete the SQLite database file specified by `DB_NAME`, ensuring a clean environment for subsequent tests.
+        """
         if os.path.exists(DB_NAME):
             os.remove(DB_NAME)
 
@@ -39,6 +49,11 @@ class TestStorage(unittest.IsolatedAsyncioTestCase):
     @patch('core.storage.send_notification', new_callable=AsyncMock) # Corrected patch target
     async def test_save_new_gig(self, mock_send_notification):
         # Test saving a new gig
+        """
+        Verifies that saving a new gig inserts a record with the expected fields into the database and triggers a single notification.
+        
+        Saves a gig with all fields provided, queries the `gigs` table for the record by link, and asserts each stored column (source, title, link, snippet, price, full_description, timestamp, contact_info, category) matches the expected values (timestamp must be present). Also asserts that `send_notification` was called exactly once with the expected positional arguments (source, title, link, snippet).
+        """
         await save_gig(
             source="Test Source",
             title="Test Title",
@@ -77,6 +92,11 @@ class TestStorage(unittest.IsolatedAsyncioTestCase):
     @patch('core.storage.send_notification', new_callable=AsyncMock) # Corrected patch target
     async def test_save_duplicate_gig(self, mock_send_notification):
         # Test saving a duplicate gig (same source and link)
+        """
+        Verify that saving a gig ignores duplicate inserts for the same source and link and triggers a notification only once.
+        
+        Saves an initial gig, attempts to save a second gig with the same source and link but different fields, then asserts the database contains a single entry for that link and that send_notification was called exactly once.
+        """
         await save_gig(
             source="Test Source",
             title="Test Title",

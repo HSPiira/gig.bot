@@ -20,6 +20,11 @@ SUBREDDITS = [
 BASE_URL = "https://www.reddit.com/r/{subreddit}/search.json?q=flair%3A%22Hiring%22&restrict_sr=on&sort=new"
 
 async def scrape_reddit():
+    """
+    Scrape configured Reddit subreddits for gig-like posts and persist matched results.
+    
+    Scans each subreddit in the module's SUBREDDITS list, respecting robots.txt and configured proxy/throttling settings; for posts that match gig criteria it saves a gig record (including source, title, link, snippet, full description, timestamp, and category), updates per-subreddit scraper health, and logs per-subreddit performance and errors.
+    """
     scraper_name = "reddit"
     start_time = time.time()
     status = "success"
@@ -93,4 +98,3 @@ async def scrape_reddit():
             duration = time.time() - start_time # Duration for THIS subreddit's scrape
             log_scraper_performance(f"{scraper_name}.{subreddit}", duration, status, error_message)
             start_time = time.time() # Reset start time for next subreddit
-

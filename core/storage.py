@@ -7,6 +7,16 @@ import asyncio # Import asyncio to run send_notification if save_gig is not awai
 DB_NAME = "gigs.db"
 
 def init_db():
+    """
+    Initialize the SQLite database file and ensure required tables and schemas exist.
+    
+    Creates (if missing) the following tables in the configured DB_NAME:
+    - gigs: stores scraped gig records with columns id, source, title, link, snippet, price, full_description, timestamp, contact_info, category and a UNIQUE constraint on (source, link).
+    - scraper_health: stores the last run timestamp for each scraper (scraper_name primary key).
+    - scraper_performance: records scraper run metrics with a composite primary key on (scraper_name, timestamp).
+    
+    This function commits the schema changes to disk and closes the database connection.
+    """
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
 
@@ -48,6 +58,14 @@ def init_db():
     conn.close()
 
 def update_scraper_health(scraper_name: str):
+    """
+    Record the current UTC run timestamp for a scraper in the database.
+    
+    Inserts or replaces the `last_run` for `scraper_name` in the `scraper_health` table using the current UTC timestamp in ISO 8601 format. Errors are logged; the function ensures the database connection is closed.
+    
+    Parameters:
+        scraper_name (str): Identifier of the scraper whose last run time should be recorded.
+    """
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -64,6 +82,17 @@ def update_scraper_health(scraper_name: str):
         conn.close()
 
 def log_scraper_performance(scraper_name: str, duration: float, status: str, error_message: str = None):
+    """
+    Log a scraper's performance metrics as a timestamped record in the scraper_performance table.
+    
+    Inserts a row containing the current UTC ISO-8601 timestamp, the scraper identifier, run duration (seconds), status, and an optional error message into persistent storage.
+    
+    Parameters:
+        scraper_name (str): Identifier for the scraper whose performance is being recorded.
+        duration (float): Execution time in seconds.
+        status (str): Outcome label (for example "success", "failure", or "error").
+        error_message (str, optional): A brief error description when applicable.
+    """
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -82,7 +111,12 @@ def log_scraper_performance(scraper_name: str, duration: float, status: str, err
         conn.close()
 
 def get_scraper_health(scraper_name: str) -> str | None:
-    """Retrieves the last run timestamp for a given scraper."""
+    """
+    Get the last-run timestamp recorded for the named scraper.
+    
+    Returns:
+        `str`: ISO 8601 UTC timestamp of the scraper's last run, or `None` if no record exists.
+    """
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("SELECT last_run FROM scraper_health WHERE scraper_name = ?", (scraper_name,))
@@ -92,8 +126,12 @@ def get_scraper_health(scraper_name: str) -> str | None:
 
 async def check_scraper_health(threshold_minutes: int):
     """
-    Checks if any active scraper has not reported within the threshold_minutes.
-    Triggers an alert if a scraper is found to be unhealthy.
+    Check scraper reporting recency and send alerts for unhealthy scrapers.
+    
+    Fetches each scraper's last successful run time from the database and, using UTC, compares it to the current time. If a scraper's last run is older than threshold_minutes or missing, logs an error or warning respectively and sends a health alert notification.
+    
+    Parameters:
+        threshold_minutes (int): Maximum allowed minutes since a scraper's last successful run before it is considered unhealthy.
     """
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
@@ -130,6 +168,14 @@ async def save_gig( # Made save_gig async
     contact_info: str = None,
     category: str = None
 ):
+    """
+    Persist a gig to the database and notify recipients about the new gig.
+    
+    If `timestamp` is not provided, the current UTC time in ISO 8601 format is used. If a gig with the same `source` and `link` already exists (unique constraint), the insert is skipped and a warning is logged. A notification is sent after a successful save.
+    
+    Parameters:
+        timestamp (str | None): ISO 8601 UTC timestamp for the gig; when None, current UTC time is used.
+    """
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
 

@@ -20,6 +20,11 @@ client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
+    """
+    Log that the bot is ready, list monitored channels with warnings for unresolved IDs, and mark the Discord scraper as healthy.
+    
+    Logs the bot username and each configured channel ID resolved to "channel name in guild name"; logs a warning for any channel IDs that cannot be resolved. Calls update_scraper_health("discord") after readiness is confirmed.
+    """
     logger.info(f'Logged in as {client.user}')
     logger.info('Monitoring channels:')
     for channel_id in CHANNEL_IDS:
@@ -32,6 +37,14 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+    """
+    Process an incoming Discord message and, if it appears to advertise a gig, log and persist the gig data.
+    
+    If the message is not from the bot and originates from a monitored channel, the message content is inspected with looks_like_gig; when a match is found the function extracts channel name, link, timestamp, and category, logs the discovery, waits a randomized delay, and saves a gig record via save_gig.
+    
+    Parameters:
+        message: The Discord message object to inspect and possibly persist.
+    """
     if message.author == client.user:
         return
 
@@ -56,6 +69,11 @@ async def on_message(message):
             )
 
 async def scrape_discord():
+    """
+    Start and run the Discord client, manage its lifecycle, and record scraper performance.
+    
+    Validates the configured DISCORD_BOT_TOKEN and, if missing, logs an error, records a failed status, and logs performance before returning. If a token is present, starts the Discord client and keeps it running until stopped. On Discord login failure or other runtime exceptions, records a failed status and the error message. Always closes the client if it remains open and logs the scraper's elapsed time, final status, and any error message.
+    """
     scraper_name = "discord"
     start_time = time.time()
     status = "success"

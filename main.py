@@ -15,7 +15,9 @@ from core.exporter import fetch_all_gigs, export_to_csv, export_to_json # Import
 
 async def export_gigs_job():
     """
-    Fetches gigs from the database and exports them according to config settings.
+    Export gigs from the database to configured file formats in the configured export directory.
+    
+    Checks the export enable flag in config.export_settings and exits early if exporting is disabled or if there are no gigs to export. Ensures the configured export directory exists, then writes exported gigs in each format listed in config.export_settings.export_formats (supports "csv" and "json") using timestamped filenames of the form "gigs_export_<timestamp>.<ext>". Logs a warning for any unsupported formats and logs progress and completion.
     """
     if not config.export_settings.get("enable_export", False):
         logger.info("Exporting is disabled in settings.")
@@ -43,6 +45,17 @@ async def export_gigs_job():
 
 
 async def main():
+    """
+    Initialize application state, discover available scrapers, schedule periodic jobs, and run the scheduler until shutdown.
+    
+    Discovers scraper callables in the scrapers package (only modules listed in config.enabled_scrapers) and schedules:
+    - synchronous scrapers to run every 10 minutes (executed off the event loop),
+    - asynchronous scrapers to run every 10 minutes,
+    - an optional gig export job at the configured export interval when enabled,
+    - a periodic health-check job at the configured interval.
+    
+    Starts the AsyncIO scheduler and blocks until a KeyboardInterrupt or SystemExit is received, then shuts down the scheduler gracefully.
+    """
     logger.info("Starting Gig Bot...")
     init_db()
 

@@ -13,8 +13,10 @@ def get_domain_from_url(url):
 
 async def get_robots_parser(url):
     """
-    Fetches and parses the robots.txt for a given URL's domain.
-    Caches the parser for subsequent requests to the same domain.
+    Retrieve and cache the robots.txt parser for the domain of the given URL.
+    
+    Returns:
+        RobotExclusionRulesParser or None: A parser instance for the domain if robots.txt was successfully fetched and parsed; `None` if robots.txt could not be retrieved or parsed.
     """
     domain = get_domain_from_url(url)
     if domain not in _robots_parsers:
@@ -38,7 +40,14 @@ async def get_robots_parser(url):
 
 async def is_url_allowed(url, user_agent="*"):
     """
-    Checks if a given URL is allowed to be scraped according to its robots.txt.
+    Determine whether scraping the given URL is permitted by the site's robots.txt.
+    
+    Parameters:
+        url (str): The URL to evaluate.
+        user_agent (str): The User-Agent to check against the robots.txt rules.
+    
+    Returns:
+        bool: `True` if the URL is allowed to be fetched according to robots.txt or if no parser is available; `False` if robots.txt explicitly disallows the URL.
     """
     parser = await get_robots_parser(url)
     if parser:
@@ -54,6 +63,11 @@ async def is_url_allowed(url, user_agent="*"):
 if __name__ == "__main__":
     # Example usage for testing
     async def test_robots():
+        """
+        Run basic runtime checks of robots.txt handling and log the results.
+        
+        Performs example queries against representative URLs (a real site with robots.txt, a simple site, and an illustrative disallowed path) and logs whether each URL is allowed by the module's robots.txt rules.
+        """
         logger.info("Testing robots.py...")
         
         # Test a site with robots.txt

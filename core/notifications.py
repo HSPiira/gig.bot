@@ -10,7 +10,9 @@ from core.config import config
 
 async def send_email_notification(source, title, link, snippet):
     """
-    Sends an email notification for a new gig, using settings from config.
+    Send an email notification about a discovered gig.
+    
+    Reads SMTP and recipient settings from config.notification_settings (keys: `enable_email_notifications`, `smtp_server`, `smtp_port`, `smtp_username`, `smtp_password`, `email_recipients`) and returns early if email notifications are disabled or required settings are missing. Composes a plain-text message including source, title, link, and snippet, attempts to send it via SMTP over SSL, and logs success or failure; exceptions are caught and not re-raised.
     """
     if not config.notification_settings.get("enable_email_notifications", False):
         return
@@ -55,7 +57,15 @@ async def send_email_notification(source, title, link, snippet):
 
 async def send_telegram_notification(source, title, link, snippet):
     """
-    Sends a Telegram message notification for a new gig, using settings from config.
+    Compose and send a Telegram message announcing a discovered gig using the configured bot and chat.
+    
+    If Telegram notifications are disabled or required configuration (bot token or chat ID) is missing, the function does nothing.
+    
+    Parameters:
+        source (str): Origin of the gig (e.g., site or feed name) included in the message.
+        title (str): Gig title included in the message.
+        link (str): URL to the gig listing included in the message.
+        snippet (str): Short description or excerpt included in the message.
     """
     if not config.notification_settings.get("enable_telegram_notifications", False):
         return

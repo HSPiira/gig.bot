@@ -11,8 +11,10 @@ LOG_FILE = os.path.join(LOG_DIR, f"gig_bot_{datetime.now().strftime('%Y%m%d_%H%M
 
 def setup_logging():
     """
-    Sets up the logging configuration for the gig_bot application.
-    Logs to both console and a file.
+    Configure and return the 'gig_bot' logger to emit INFO-level messages to both the console and the module's timestamped log file.
+    
+    Returns:
+        logging.Logger: The configured logger instance named 'gig_bot' that writes INFO-level (and above) records to the console and to LOG_FILE.
     """
     # Create a logger
     logger = logging.getLogger('gig_bot')
