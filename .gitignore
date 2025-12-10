@@ -19,3 +19,5 @@ proxies.txt
 gig_bot_session.session
 
 TODO
+logs/
+*.log

@@ -1,0 +1,49 @@
+{
+    "delay_range": [1, 5],
+    "enabled_scrapers": ["jiji", "reddit", "discord", "telegram"],
+    "use_proxies": false,
+    "retry_attempts": 5,
+    "http_timeout": 10,
+    "user_agents": [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15"
+    ],
+    "proxy_list": [],
+    "weighted_keywords": {
+        "freelance": 5,
+        "project": 3,
+        "hiring": 2,
+        "looking for": 2,
+        "developer": 5,
+        "designer": 3,
+        "writer": 3,
+        "urgently": 1
+    },
+    "negative_keywords": [
+        "recruitment agency",
+        "full-time",
+        "permanent position",
+        "internship"
+    ],
+    "export_settings": {
+        "enable_export": true,
+        "export_interval_minutes": 60,
+        "export_formats": ["csv", "json"],
+        "export_directory": "exports"
+    },
+    "notification_settings": {
+        "enable_email_notifications": false,
+        "email_recipients": ["your_email@example.com"],
+        "smtp_server": "smtp.example.com",
+        "smtp_port": 587,
+        "smtp_username": "your_email@example.com",
+        "smtp_password": "YOUR_EMAIL_PASSWORD",
+        "enable_telegram_notifications": false,
+        "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+        "telegram_chat_id": "YOUR_TELEGRAM_CHAT_ID"
+    },
+    "health_check_interval_minutes": 30
+}
