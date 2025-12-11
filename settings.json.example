@@ -1,6 +1,6 @@
 {
     "delay_range": [1, 5],
-    "enabled_scrapers": ["jiji", "reddit", "discord", "telegram"],
+    "enabled_scrapers": ["jiji", "reddit", "discord", "telegram", "craigslist", "locanto", "classifiedads", "gumtree", "digitalpoint", "warriorforum"],
     "use_proxies": false,
     "retry_attempts": 5,
     "http_timeout": 10,
@@ -52,5 +52,35 @@
         "enable_caching": true,
         "cache_size": 1000
     },
-    "scraper_interval_minutes": 10
+    "scraper_interval_minutes": 10,
+    "scrapers": {
+        "craigslist": {
+            "cities": ["sfbay", "newyork", "seattle", "losangeles", "boston", "austin"],
+            "max_pages": 3
+        },
+        "locanto": {
+            "countries": {
+                "us": "https://www.locanto.com/IT-Jobs/",
+                "uk": "https://www.locanto.co.uk/IT-Jobs/",
+                "in": "https://www.locanto.in/IT-Jobs/"
+            },
+            "max_pages": 2
+        },
+        "classifiedads": {
+            "max_pages": 3
+        },
+        "gumtree": {
+            "countries": {
+                "uk": "https://www.gumtree.com/computers-telecoms-services",
+                "au": "https://www.gumtree.com.au/s-computer-it-services/k0c18493"
+            },
+            "max_pages": 2
+        },
+        "digitalpoint": {
+            "max_pages": 3
+        },
+        "warriorforum": {
+            "max_pages": 3
+        }
+    }
 }

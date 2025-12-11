@@ -76,6 +76,4 @@ Thumbs.db
 *.temp
 
 # Documentation
-PROJECT_REVIEW.md
-todo
-IMPROVEMENTS_SUMMARY.md
+summaries/

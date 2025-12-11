@@ -1,6 +1,7 @@
 import re
 import hashlib
 from functools import lru_cache
+from typing import Tuple
 from transformers import pipeline
 from core.logger import logger
 from core.config import config
@@ -30,7 +31,7 @@ NLP_CONFIDENCE_THRESHOLD = config.get('nlp_settings', {}).get('confidence_thresh
 NLP_ENABLE_CACHING = config.get('nlp_settings', {}).get('enable_caching', True)
 NLP_CACHE_SIZE = config.get('nlp_settings', {}).get('cache_size', 1000)
 
-def keyword_score_and_filter(text: str) -> (float, bool):
+def keyword_score_and_filter(text: str) -> Tuple[float, bool]:
     """
     Determine a weighted keyword score for the text and whether it should be considered a potential gig.
     
