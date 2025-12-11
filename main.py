@@ -6,7 +6,7 @@ import threading
 import os
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from datetime import datetime, timezone # Added import for datetime and timezone
+from datetime import datetime, timezone, timedelta # Added import for datetime, timezone, and timedelta
 
 import scrapers
 from core.storage import init_db, check_scraper_health # Import check_scraper_health
@@ -75,30 +75,41 @@ async def main():
                 continue
 
             module = importlib.import_module(f"scrapers.{modname}")
-            for item_name in dir(module):
-                if item_name.startswith("scrape_"):
-                    scraper_func = getattr(module, item_name)
-                    if inspect.iscoroutinefunction(scraper_func):
-                        async_scrapers.append(scraper_func)
-                    else:
-                        sync_scrapers.append(scraper_func)
 
-    # Schedule synchronous scrapers
+            # Only look for the main entry point function: scrape_{modname}
+            # This prevents discovery of helper functions like scrape_craigslist_city, scrape_digitalpoint_page, etc.
+            main_func_name = f"scrape_{modname}"
+
+            if hasattr(module, main_func_name):
+                scraper_func = getattr(module, main_func_name)
+
+                if inspect.iscoroutinefunction(scraper_func):
+                    async_scrapers.append(scraper_func)
+                    logger.info(f"Discovered async scraper: {main_func_name}")
+                elif callable(scraper_func):
+                    sync_scrapers.append(scraper_func)
+                    logger.info(f"Discovered sync scraper: {main_func_name}")
+            else:
+                logger.warning(f"Module {modname} does not have a {main_func_name} function")
+
+    # Schedule synchronous scrapers - run immediately then every 10 minutes
     for scraper in sync_scrapers:
         logger.info(f"-> Scheduling synchronous scraper: {scraper.__name__} to run every 10 minutes.")
         scheduler.add_job(
-            lambda s=scraper: asyncio.create_task(asyncio.to_thread(s)), 
-            IntervalTrigger(minutes=10), 
-            id=f"sync_scraper_{scraper.__name__}"
+            lambda s=scraper: asyncio.create_task(asyncio.to_thread(s)),
+            IntervalTrigger(minutes=10),
+            id=f"sync_scraper_{scraper.__name__}",
+            next_run_time=datetime.now(timezone.utc)
         )
 
-    # Schedule asynchronous scrapers
+    # Schedule asynchronous scrapers - run immediately then every 10 minutes
     for scraper in async_scrapers:
         logger.info(f"-> Scheduling asynchronous scraper: {scraper.__name__} to run every 10 minutes.")
         scheduler.add_job(
-            scraper, 
-            IntervalTrigger(minutes=10), 
-            id=f"async_scraper_{scraper.__name__}"
+            scraper,
+            IntervalTrigger(minutes=10),
+            id=f"async_scraper_{scraper.__name__}",
+            next_run_time=datetime.now(timezone.utc)
         )
             
     # Schedule export job

@@ -52,7 +52,7 @@ async def is_url_allowed(url, user_agent="*"):
     parser = await get_robots_parser(url)
     if parser:
         path = urllib.parse.urlparse(url).path
-        allowed = parser.is_url_allowed(user_agent, url)
+        allowed = parser.is_allowed(user_agent, url)
         if not allowed:
             logger.warning(f"URL disallowed by robots.txt: {url} for User-Agent: {user_agent}")
         return allowed
